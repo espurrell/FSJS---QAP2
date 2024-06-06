@@ -4,20 +4,21 @@ const path = require('path');
 const { format } = require('date-fns');
 const EventEmitter = require('events');
 
-// Define/extend an EventEmitter class
+// Defn class
 class MyEmitter extends EventEmitter {};
-// Initialize a new emitter object
+
+// Initialize 
 const myEmitter = new MyEmitter();
 
-// Directory for log files
+// Directory
 const logDir = path.join(__dirname, 'logs');
 
-// Ensure the logs directory exists
+// error handling
 if (!fs.existsSync(logDir)) {
   fs.mkdirSync(logDir);
 }
 
-// Function to write log to a daily file
+// Fn daily file
 const writeLogToFile = (message) => {
   const date = new Date();
   const dateString = format(date, 'yyyy-MM-dd');
@@ -31,11 +32,23 @@ const writeLogToFile = (message) => {
   });
 };
 
-// Function to log events
+// Fn log events
 const logEvent = (type, message) => {
   const fullMessage = `${type} Event: ${message}`;
   console.log(fullMessage);
   writeLogToFile(fullMessage);
+};
+
+// Fn for menu
+const includeMenu = (htmlContent, callback) => {
+  fs.readFile('./Views/Template/menu.html', 'utf8', (err, menuHtml) => {
+    if (err) {
+      callback(err, null);
+    } else {
+      const contentWithMenu = menuHtml + htmlContent;
+      callback(null, contentWithMenu);
+    }
+  });
 };
 
 const server = http.createServer((req, res) => {
@@ -59,10 +72,10 @@ const server = http.createServer((req, res) => {
       filePath += '/index.html';
       break;
     default:
-      filePath += '/404.html'; // Ensure you have a 404.html file for not found pages
+      filePath += '/404.html'; 
   }
 
-  fs.readFile(filePath, (err, data) => {
+  fs.readFile(filePath, 'utf8', (err, data) => {
     if (err) {
       res.writeHead(500, { 'Content-Type': 'text/html' });
       res.write('<h1>Server Error</h1>');
@@ -71,22 +84,31 @@ const server = http.createServer((req, res) => {
       // Emit an error event
       myEmitter.emit('error', '500 Internal Server Error');
     } else {
-      res.writeHead(200, { 'Content-Type': 'text/html' });
-      res.write(data);
-      res.end();
+      includeMenu(data, (err, contentWithMenu) => {
+        if (err) {
+          res.writeHead(500, { 'Content-Type': 'text/html' });
+          res.write('<h1>Server Error</h1>');
+          res.end();
+          logEvent('Error', `Failed to include menu: ${err.message}`);
+        } else {
+          res.writeHead(200, { 'Content-Type': 'text/html' });
+          res.write(contentWithMenu);
+          res.end();
 
-      // Emit an event for a successful file read
-      myEmitter.emit('fileRead', filePath);
+          
+          myEmitter.emit('fileRead', filePath);
+        }
+      });
     }
   });
 
-  // Emit an event for route access
+  
   if (url !== '/') {
     myEmitter.emit('routeAccessed', url);
   }
 });
 
-// Listen for events
+
 myEmitter.on('error', (message) => {
   logEvent('Error', message);
 });
