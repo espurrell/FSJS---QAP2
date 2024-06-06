@@ -1,45 +1,42 @@
 const http = require('http');
+const fs = require('fs');
+const path = require('path');
 
 const server = http.createServer((req, res) => {
   const url = req.url;
-  
+  let filePath = './views';
+
   switch (url) {
     case '/about':
-      console.log('About page');
-      res.writeHead(200, { 'Content-Type': 'text/html' });
-      res.write('<h1>About Page</h1>');
+      filePath += '/about.html';
       break;
-
     case '/contact':
-      console.log('Contact page');
-      res.writeHead(200, { 'Content-Type': 'text/html' });
-      res.write('<h1>Contact Page</h1>');
+      filePath += '/contact.html';
       break;
-
     case '/products':
-      console.log('Products page');
-      res.writeHead(200, { 'Content-Type': 'text/html' });
-      res.write('<h1>Products Page</h1>');
+      filePath += '/products.html';
       break;
-
     case '/subscribe':
-      console.log('Subscribe page');
-      res.writeHead(200, { 'Content-Type': 'text/html' });
-      res.write('<h1>Subscribe Page</h1>');
+      filePath += '/subscribe.html';
       break;
-
     case '/':
-      console.log('Home page');
-      res.writeHead(200, { 'Content-Type': 'text/html' });
-      res.write('<h1>Home Page</h1>');
+      filePath += '/index.html';
       break;
-      
     default:
-      console.log('Page not found');
-      res.writeHead(404, { 'Content-Type': 'text/html' });
-      res.write('<h1>404 Page Not Found</h1>');
+      filePath += '/404.html'; 
   }
-  res.end();
+
+  fs.readFile(filePath, (err, data) => {
+    if (err) {
+      res.writeHead(500, { 'Content-Type': 'text/html' });
+      res.write('<h1>Server Error</h1>');
+      res.end();
+    } else {
+      res.writeHead(200, { 'Content-Type': 'text/html' });
+      res.write(data);
+      res.end();
+    }
+  });
 });
 
 server.listen(3000, () => {
